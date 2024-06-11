@@ -44,6 +44,7 @@ The Seurat package used for the integration has to be installed over github as f
 ### Installed from Bioconductor
 
 * *VennDetail*(1.16.0)
+* *PCAtools* (2.12.0)
   
   Installations were made in R with for example:
   ```
