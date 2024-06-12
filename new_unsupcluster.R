@@ -522,6 +522,58 @@ one.way.plot.MTDH <- one.way.plot.MTDH +
        y = "MTDH Gene expression")
 one.way.plot.MTDH
 
+#MKI67 marker
+
+
+
+
+#One-way ANOVA 
+model3=aov(MKI67~group,data = merge)
+summary(model3)
+
+#Check for homoscedasticity
+par(mfrow=c(2,2))
+plot(model3)
+par(mfrow=c(1,1))
+# post-hoc test to check if there are differences between the group means but not what the differences are.
+
+tukey.model3<-TukeyHSD(model3)
+tukey.model3
+TK_data_MKI67<-as.data.frame(tukey.model3[1])
+TK_data_MKI67 <- tibble::rownames_to_column(TK_data_MKI67, "Group comparison")
+# Plot the results in a graph
+tukey.plot.aov<-aov(MKI67 ~ group, data=merge)
+tukey.plot.test<-TukeyHSD(tukey.plot.aov)
+plot(tukey.plot.test, las = 1)
+
+#summarize the original data 
+mean.MKI67.data <- merge %>%
+  group_by(group) %>%
+  summarise(
+    MKI67 = mean(MKI67)
+  )
+#Plot the raw data
+one.way.plot.MKI67 <- ggplot(merge, aes(x = group, y = MKI67, )) +
+  geom_point(cex = 1.5, pch = 1.0,position = position_jitter(w = 0.1, h = 0))
+
+#Add the means and standard errors to the graph
+one.way.plot.MKI67 <- one.way.plot.MKI67 +
+  stat_summary(fun.data = 'mean_se', geom = 'errorbar', width = 0.2) +
+  stat_summary(fun.data = 'mean_se', geom = 'pointrange') +
+  geom_point(data=mean.MKI67.data, aes(x=group, y=MKI67))
+one.way.plot.MKI67 <- one.way.plot.MKI67 +
+  geom_text(data=mean.MKI67.data, label=mean.MKI67.data$group, vjust = -8, size = 5) 
+one.way.plot.MKI67
+one.way.plot.MKI67 <- one.way.plot.MKI67 +
+  theme_classic2() +
+  labs(title = "MKI67 marker in response to different groups",
+       x = "Groups of patients (1=Solid Normal Tissue, 2=Tumor Tissue,3=Tumor Tissue)",
+       y = "MKI67 Gene expression")
+one.way.plot.MKI67
+
+
+
+
 
 #TK_plot_snd1=ggtexttable(TK_data_snd1,theme = ttheme("light"),rows=NULL)
 #snd1 Turkey multiple comparissons
@@ -548,10 +600,21 @@ tab2%>%
   tab_add_title(text = subtitle, face = "plain", size = 10) %>%
   tab_add_title(text = main.title, face = "bold", padding = unit(0.1, "line")) 
 
+#MKI67 Turkey multiple comparissons
+main.title <- "Tukey multiple comparisons of means"
+subtitle <- paste0(
+  "95% family-wise confidence level",
+  " Fit: aov(formula = MKI67 ~ group, data = merge).") %>%
+  strwrap(width = 80) %>%
+  paste(collapse = "\n")
+tab3=ggtexttable(TK_data_MKI67,theme = ttheme("light"),rows=NULL)
+tab3%>%
+  tab_add_title(text = subtitle, face = "plain", size = 10) %>%
+  tab_add_title(text = main.title, face = "bold", padding = unit(0.1, "line")) 
 
 
-ggarrange(one.way.plot.snd1,one.way.plot.MTDH, tab,tab2,
-          ncol = 2, nrow = 2,
+ggarrange(one.way.plot.snd1,one.way.plot.MTDH, one.way.plot.MKI67,tab,tab2,tab3,
+          ncol = 3, nrow = 3,
           heights = c(1, 0.5, 0.3))
 #cluste1
 design3=design2
