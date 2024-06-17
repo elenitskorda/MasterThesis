@@ -43,16 +43,6 @@ library(VennDetail)
 library(VennDiagram)
 library(ggtext)
 
-message <- "Preparation of datasets."
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
-
-
 ##==========================================================================
 ##  SECTION 1: Prepare reference and query datasets to a proper format    ==
 ##==========================================================================
@@ -160,14 +150,6 @@ query.annotation = query.annotation %>%
   column_to_rownames(var = "new_sample")
 
 ##---------------------------------------------------------------------------
-message <- "Integration."
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
 
 ##================================================================
 ##                   SECTION 2: Integration                     ==
@@ -250,18 +232,10 @@ plot <- p1+p3+p2+plot_annotation(title = "Proteome_VS_Proteome")  &
               theme(plot.title = element_text(hjust = 0.5,size = 15)) 
 plot
 
-message <- "Exploration of markers"
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
-
-##=============================================================================================================
-##  SECTION 3: Finds markers (differentially expressed genes) for each of the identity classes in a dataset  ==
-##=============================================================================================================
+##================================================================
+##  SECTION 3: Finds markers (differentially expressed genes)   ==
+##            for each of the identity classes in a dataset     ==
+##================================================================
 
 # Rename the idents of ovarian.quert with integrated ones
 Idents(ovarian.query)<-ovarian.query$predicted.id
@@ -315,15 +289,6 @@ ovarian.query$Cells=Cells(ovarian.query)
 P1=DoHeatmap(ovarian.query,features = top10$gene,group.bar = TRUE,
              label=TRUE,angle=30,size = 3.5)+  guides(colour=FALSE)
 P1
-
-message <- "Enrichment analysis."
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
 
 ##===================================================================
 ##    SECTION 4: Performs enrichment analysis for each cluster     ==
@@ -396,6 +361,7 @@ allneg %>%
 KURAM_BENIGN <- rbind(allposKURAM, allnegKURAM)
 
 # Extract genes for comparison to expression analysis
+# Positive
 query$pos %>% 
   select(c(MSigDB_Oncogenic_Signatures.Term, 
            MSigDB_Oncogenic_Signatures.Genes)) %>% 
@@ -404,9 +370,9 @@ query$pos %>%
 
 allposKURAM %>% 
   left_join(queryposgenes, by="Pathway")-> KURAM_pos_benign
-
 KURAM_pos_benign
 
+# Negative
 query$neg %>% 
   select(c(MSigDB_Oncogenic_Signatures.Term, 
            MSigDB_Oncogenic_Signatures.Genes)) %>% 
@@ -416,13 +382,14 @@ query$neg %>%
 allnegKURAM %>% 
   left_join(queryneggenes, by="Pathway")-> KURAM_neg_benign
 
+# Combine datasets by row
 KURAM_GENES_BENIGN<- rbind(KURAM_neg_benign, KURAM_pos_benign)
 
 ##---------------------------------------------------------------
 ##                 KURAM Cell Line - NO BENIGN                 --
 ##---------------------------------------------------------------
 
-
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for reference
 ref=DEenrichRPlot(reference,
                   ident.1 = "KURAM",
                   max.genes = 100,
@@ -434,6 +401,8 @@ ref=DEenrichRPlot(reference,
                   logfc.threshold = 0.1,
                   return.gene.list = T)
 
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for query
+# Excluding benign cell lines
 query.tumors=DEenrichRPlot(ovarian.tumors, 
                            ident.1 = "KURAM",
                            max.genes = 100,
@@ -445,19 +414,24 @@ query.tumors=DEenrichRPlot(ovarian.tumors,
                            logfc.threshold = 0.1,
                            return.gene.list = T)
 
+# Extract positive markers for reference and query
 ven.tumors.pos <- venndetail(list(reference = 
                                   ref$pos$MSigDB_Oncogenic_Signatures.Term , 
                                   Query = 
                                   query.tumors$pos$MSigDB_Oncogenic_Signatures.Term
 ))
+
+# Extract negative markers for reference and query
 ven.tumors.neg <- venndetail(list(reference =
                                   ref$neg$MSigDB_Oncogenic_Signatures.Term ,
                                   Query = 
                                   query.tumors$neg$MSigDB_Oncogenic_Signatures.Term
 ))
-#Do the same for Tumour data
+
+# Extract the common positive marker between reference and query
 tumors.pos=getSet(ven.tumors.pos, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.pos %>% 
   mutate(ID="Pos") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -465,8 +439,10 @@ tumors.pos %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.posKURAM
 
+# Extract the common negative marker between reference and query
 tumors.neg=getSet(ven.tumors.neg, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.neg %>% 
   mutate(ID="Neg") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -474,10 +450,11 @@ tumors.neg %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.negKURAM
 
+# Combine datasets by row
 KURAM_NOBENIGN <- rbind(tumors.posKURAM, tumors.negKURAM)
 KURAM=rbind(KURAM_BENIGN,KURAM_NOBENIGN)
 
-#Extract genes as well for comparison to expression analysis
+#Extract genes as well for comparison to expression analysis (positive)
 query.tumors$pos %>% 
   select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
@@ -486,6 +463,7 @@ query.tumors$pos %>%
 tumors.posKURAM %>% 
   left_join(queryposgenes, by="Pathway") -> KURAM_pos_nobenign
 
+#Extract genes as well for comparison to expression analysis (negative)
 query.tumors$neg %>% 
   select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
@@ -494,9 +472,8 @@ query.tumors$neg %>%
 tumors.negKURAM %>% 
   left_join(queryneggenes, by="Pathway")-> KURAM_neg_nobenign
 
+# Combine datasets by row
 KURAM_GENES_NOBENIGN<- rbind(KURAM_neg_nobenign, KURAM_pos_nobenign)
-
-#Make one dataframe with genes for KURAM
 KURAM_GENES<-rbind(KURAM_GENES_BENIGN, KURAM_GENES_NOBENIGN)
 
 #Remove duplicate pathway entries for both neg and pos
@@ -505,12 +482,13 @@ KURAM %>%
   count() %>% 
   filter(n>1)
 KURAM_alt <- KURAM[!(KURAM$Pathway == "RB DN.V1 DN" & KURAM$ID == "Neg"), ]
-
 KURAM_alt
 
+# Create columns and fill them up to create a structured dataframe
 KURAM_alt %>% 
   pivot_wider(names_from=Status, values_from=ID) %>% 
-  mutate(Pathway_bold=ifelse(BENIGN==NO_BENIGN, paste("**", Pathway, "**", sep=""), Pathway)) %>% 
+  mutate(Pathway_bold=ifelse(BENIGN==NO_BENIGN, 
+                             paste("**", Pathway, "**", sep=""), Pathway)) %>% 
   mutate(Pathway_bold=ifelse(is.na(Pathway_bold), Pathway, Pathway_bold)) %>% 
   mutate(Pathway=Pathway_bold) %>% 
   select(!Pathway_bold) %>% 
@@ -519,6 +497,7 @@ KURAM_alt %>%
 
 KURAM_plot
 
+# Plot pathways for benign and no begign for pos and neg markers
 p1 <- ggplot(KURAM_plot, aes(x=Status , y=Pathway, colour = ID)) +
   geom_point(alpha=2,size = 6)+
   theme_classic()+
@@ -527,7 +506,6 @@ p1 <- ggplot(KURAM_plot, aes(x=Status , y=Pathway, colour = ID)) +
         ggtitle("KURAM")
 
 p1
-
 
 ##----------------------------------------------------------------
 ##                   CAOV3 Cell Line - BENIGN                   --
@@ -620,6 +598,7 @@ CAOV3_GENES_BENIGN<- rbind(CAOV3_neg_benign, CAOV3_pos_benign)
 ##                 CAOV3 Cell Line - NO BENIGN                 --
 ##---------------------------------------------------------------
 
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for reference
 ref=DEenrichRPlot(reference,
                   ident.1 = "CAOV3",
                   max.genes = 100,
@@ -631,6 +610,8 @@ ref=DEenrichRPlot(reference,
                   logfc.threshold = 0.1,
                   return.gene.list = T)
 
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for query
+# Excluding benign cell lines
 query.tumors=DEenrichRPlot(ovarian.tumors, 
                            ident.1 = "CAOV3",
                            max.genes = 100,
@@ -642,20 +623,23 @@ query.tumors=DEenrichRPlot(ovarian.tumors,
                            logfc.threshold = 0.1,
                            return.gene.list = T)
 
+# Extract positive markers for reference and query
 ven.tumors.pos <- venndetail(list(reference =
                                   ref$pos$MSigDB_Oncogenic_Signatures.Term , 
                                   Query = 
                                   query.tumors$pos$MSigDB_Oncogenic_Signatures.Term
 ))
+# Extract positive markers for reference and query
 ven.tumors.neg <- venndetail(list(reference =
                                   ref$neg$MSigDB_Oncogenic_Signatures.Term ,
                                   Query = 
                                   query.tumors$neg$MSigDB_Oncogenic_Signatures.Term
 ))
 
-#Do the same for Tumour data
+# Extract the common positive marker between reference and query
 tumors.pos=getSet(ven.tumors.pos, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.pos %>% 
   mutate(ID="Pos") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -663,8 +647,10 @@ tumors.pos %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.posCAOV3
 
+# Extract the common negative marker between reference and query
 tumors.neg=getSet(ven.tumors.neg, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.neg %>% 
   mutate(ID="Neg") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -672,40 +658,49 @@ tumors.neg %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.negCAOV3
 
+# Combine datasets by row
 CAOV3_NOBENIGN <- rbind(tumors.posCAOV3, tumors.negCAOV3)
 CAOV3=rbind(CAOV3_BENIGN, CAOV3_NOBENIGN)
 
-#Extract genes as well for comparison to expression analysis
+# Extract genes as well for comparison to expression analysis (positive)
 query.tumors$pos %>% 
-  select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
+  select(c(MSigDB_Oncogenic_Signatures.Term, 
+           MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
   rename(query_Genes=MSigDB_Oncogenic_Signatures.Genes)-> queryposgenes
+
 
 tumors.posCAOV3 %>% 
   left_join(queryposgenes, by="Pathway")-> CAOV3_pos_nobenign
 
+# Extract genes as well for comparison to expression analysis (negative)
 query.tumors$neg %>% 
-  select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
+  select(c(MSigDB_Oncogenic_Signatures.Term, 
+           MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
   rename(query_Genes=MSigDB_Oncogenic_Signatures.Genes)-> queryneggenes
 
 tumors.negCAOV3 %>% 
   left_join(queryneggenes, by="Pathway")-> CAOV3_neg_nobenign
 
+# Combine datasets by row
 CAOV3_GENES_NOBENIGN<- rbind(CAOV3_neg_nobenign, CAOV3_pos_nobenign)
 CAOV3_GENES<-rbind(CAOV3_GENES_NOBENIGN, CAOV3_GENES_BENIGN)
 
-#Check which ones have conflicting results
+# Check which ones have conflicting results
 CAOV3 %>%
   group_by(Pathway, CellLine, Status) %>% 
   count() %>% 
   filter(n>1)
+
+# There are few which we will delete them manually
 CAOV3 <- CAOV3[!(CAOV3$Pathway == "MEK UP.V1 UP" & CAOV3$ID == "Pos"), ]
 CAOV3 <- CAOV3[!(CAOV3$Pathway == "RB DN.V1 DN" & 
                    CAOV3$Status=="BENIGN" & CAOV3$ID == "Neg"), ]
 CAOV3_alt <- CAOV3[!(CAOV3$Pathway == "RAF UP.V1 UP" & CAOV3$ID == "Pos"), ]
-
 CAOV3_alt
+
+# Create columns and fill them up to create a structured dataframe
 CAOV3_alt %>% 
   pivot_wider(names_from=Status, values_from=ID) %>% 
   mutate(Pathway_bold=ifelse(BENIGN==NO_BENIGN, 
@@ -715,9 +710,9 @@ CAOV3_alt %>%
   select(!Pathway_bold) %>% 
   pivot_longer(c(BENIGN, NO_BENIGN), names_to="Status", values_to="ID") %>% 
   drop_na()-> CAOV3_plot
-
 CAOV3_plot
 
+# Plot pathways for benign and no begign for pos and neg markers
 p2 <- ggplot(CAOV3_plot, aes(x=Status , y=Pathway, colour = ID)) +
   geom_point(alpha=2,size = 6)+
   theme_classic()+
@@ -731,7 +726,7 @@ p2
 ##                  OVSAHO Cell Line - BENIGN                  --
 ##---------------------------------------------------------------
 
-
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for reference
 ref=DEenrichRPlot(reference,
                   ident.1 = "OVSAHO",
                   max.genes = 100,
@@ -743,6 +738,7 @@ ref=DEenrichRPlot(reference,
                   logfc.threshold = 0.1,
                   return.gene.list = T)
 
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for query
 query=DEenrichRPlot(ovarian.query, 
                     ident.1 = "OVSAHO",
                     max.genes = 100,
@@ -754,18 +750,19 @@ query=DEenrichRPlot(ovarian.query,
                     logfc.threshold = 0.1,
                     return.gene.list = T)
 
-
-
+# Extract positive markers for reference and query
 venpos<- venndetail(list(reference =ref$pos$MSigDB_Oncogenic_Signatures.Term , 
                          Query = query$pos$MSigDB_Oncogenic_Signatures.Term
 ))
+# Extract negative markers for reference and query
 venneg<- venndetail(list(reference =ref$neg$MSigDB_Oncogenic_Signatures.Term ,
                          Query = query$neg$MSigDB_Oncogenic_Signatures.Term
 ))
 
-
+# Extract the common positive marker between reference and query
 allpos=getSet(venpos, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 allpos %>% 
   mutate(ID="Pos") %>% 
   mutate(Status="BENIGN") %>% 
@@ -773,7 +770,10 @@ allpos %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->allposOVSAHO
 
+# Extract the common negative marker between reference and query
 allneg=getSet(venneg, subset = c("Shared"))  
+
+# Create columns and fill them up to create a structured dataframe
 allneg %>% 
   mutate(ID="Neg") %>% 
   mutate(Status="BENIGN") %>% 
@@ -781,33 +781,37 @@ allneg %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->allnegOVSAHO
 
-
+# Combine datasets by row
 OVSAHO_BENIGN <- rbind(allposOVSAHO, allnegOVSAHO)
 
-#Extract genes as well for comparison to expression analysis
+#Extract genes as well for comparison to expression analysis (positive)
 query$pos %>% 
-  select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
+  select(c(MSigDB_Oncogenic_Signatures.Term, 
+           MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
   rename(query_Genes=MSigDB_Oncogenic_Signatures.Genes)-> queryposgenes
 
 allposOVSAHO %>% 
   left_join(queryposgenes, by="Pathway")-> OVSAHO_pos_benign
 
+#Extract genes as well for comparison to expression analysis (negative)
 query$neg %>% 
-  select(c(MSigDB_Oncogenic_Signatures.Term, MSigDB_Oncogenic_Signatures.Genes)) %>% 
+  select(c(MSigDB_Oncogenic_Signatures.Term, 
+           MSigDB_Oncogenic_Signatures.Genes)) %>% 
   rename(Pathway=MSigDB_Oncogenic_Signatures.Term) %>% 
   rename(query_Genes=MSigDB_Oncogenic_Signatures.Genes)-> queryneggenes
 
 allnegOVSAHO %>% 
   left_join(queryneggenes, by="Pathway")-> OVSAHO_neg_benign
 
+# Combine datasets by row
 OVSAHO_GENES_BENIGN<- rbind(OVSAHO_neg_benign, OVSAHO_pos_benign)
 
 ##----------------------------------------------------------------
 ##                 OVSAHO Cell Line - NO BENIGN                 --
 ##----------------------------------------------------------------
 
-
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for reference
 ref=DEenrichRPlot(reference,
                   ident.1 = "OVSAHO",
                   max.genes = 100,
@@ -819,6 +823,8 @@ ref=DEenrichRPlot(reference,
                   logfc.threshold = 0.1,
                   return.gene.list = T)
 
+# DE and EnrichR pathway return.gene.list = TRUE, no visualization for query 
+# Excluding benign cell lines
 query.tumors=DEenrichRPlot(ovarian.tumors, 
                            ident.1 = "OVSAHO",
                            max.genes = 100,
@@ -830,16 +836,22 @@ query.tumors=DEenrichRPlot(ovarian.tumors,
                            logfc.threshold = 0.1,
                            return.gene.list = T)
 
-ven.tumors.pos <- venndetail(list(reference =ref$pos$MSigDB_Oncogenic_Signatures.Term , 
+# Extract positive markers for reference and query
+ven.tumors.pos <- venndetail(list(reference =
+                                    ref$pos$MSigDB_Oncogenic_Signatures.Term , 
                       Query = query.tumors$pos$MSigDB_Oncogenic_Signatures.Term
 ))
-ven.tumors.neg <- venndetail(list(reference =ref$neg$MSigDB_Oncogenic_Signatures.Term , 
+
+# Extract negative markers for reference and query
+ven.tumors.neg <- venndetail(list(reference =
+                                    ref$neg$MSigDB_Oncogenic_Signatures.Term , 
                       Query = query.tumors$neg$MSigDB_Oncogenic_Signatures.Term
 ))
 
-#Do the same for Tumour data
+# Extract the common positive marker between reference and query
 tumors.pos=getSet(ven.tumors.pos, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.pos %>% 
   mutate(ID="Pos") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -847,8 +859,10 @@ tumors.pos %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.posOVSAHO
 
+# Extract the common negative marker between reference and query
 tumors.neg=getSet(ven.tumors.neg, subset = c("Shared"))
 
+# Create columns and fill them up to create a structured dataframe
 tumors.neg %>% 
   mutate(ID="Neg") %>% 
   mutate(Status="NO_BENIGN") %>% 
@@ -856,6 +870,7 @@ tumors.neg %>%
   select(!Subset) %>% 
   rename(Pathway=Detail)->tumors.negOVSAHO
 
+# Combine datasets by row
 OVSAHO_NOBENIGN <- rbind(tumors.posOVSAHO, tumors.negOVSAHO)
 OVSAHO=rbind(OVSAHO_BENIGN, OVSAHO_NOBENIGN)
 
@@ -869,6 +884,7 @@ query.tumors$pos %>%
 tumors.posOVSAHO %>% 
   left_join(queryposgenes, by="Pathway")-> OVSAHO_pos_nobenign
 
+# Create columns and fill them up to create a structured dataframe
 query.tumors$neg %>% 
   select(c(MSigDB_Oncogenic_Signatures.Term,
            MSigDB_Oncogenic_Signatures.Genes)) %>% 
@@ -878,6 +894,7 @@ query.tumors$neg %>%
 tumors.negOVSAHO %>% 
   left_join(queryneggenes, by="Pathway")-> OVSAHO_neg_nobenign
 
+# Combine datasets by row
 OVSAHO_GENES_NOBENIGN<- rbind(OVSAHO_neg_nobenign, OVSAHO_pos_nobenign)
 OVSAHO_GENES<-rbind(OVSAHO_GENES_NOBENIGN, OVSAHO_GENES_BENIGN)
 
@@ -887,6 +904,7 @@ OVSAHO %>%
   count() %>% 
   filter(n>1)
 
+# Create columns and fill them up to create a structured dataframe
 OVSAHO_alt <- OVSAHO
 OVSAHO_alt %>% 
   pivot_wider(names_from=Status, values_from=ID) %>% 
@@ -910,18 +928,10 @@ p3 <- ggplot(OVSAHO_plot, aes(x=Status , y=Pathway, colour = ID)) +
 
 p3
 
-# Common pathways between benign and no benign cells
+# Plot Common pathways between benign and no benign cells
 par(mfrow=c(1,3))
 p1+p2+p3
 
-message <- "Common genes."
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
 
 ##===============================================================
 ##  SECTION 5: Find common genes between the shared pathways   ==
@@ -982,17 +992,5 @@ P2
 ##================================================================
 ##                      END OF THE SCRIPT                       ==
 ##================================================================
-
-
-# This is the end of the script
-message <- "This is the end of the script. 
-            Please contact the author for questions or doubts"
-
-system2(command = "PowerShell", 
-        args = c("-Command", 
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
 
 
