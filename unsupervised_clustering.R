@@ -1,6 +1,23 @@
 # -*- coding: utf-8 -*-
 
-
+##:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+##  Date: Mon Sep 5 10:28:18 2023                                                  ::
+##  File Name: unsupervised_clustering.R                                           ::
+##  Author: Eleni Theofania Skorda                                                 ::
+##                                                                                 ::
+##  Description:                                                                   ::
+##      Exploring CPTAC dataset and perform unsupervised Hierarchical Clustering   ::
+##                                                                                 ::
+##  List of Functions:                                                             ::
+##      generate_annotation_colors                                                 ::
+##                                                                                 ::
+##  Procedure:                                                                     ::
+##      1. Prepare reference and query datasets to a proper format                 ::
+##      2. Perform Principal Component Analysis                                    ::
+##      3. Perform Hierarchical Clustering                                         ::
+##      4. Fit an Analysis of Variance Model to SND1, MTDH and MKI67 markers       ::
+##                                                                                 ::
+##:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # Load necessary libraries
 library(ComplexHeatmap)
@@ -15,6 +32,10 @@ library(limma)
 library(ggpubr)
 library(PCAtools)
 library(ggplot2)
+
+##=========================================================================
+##  SECTION 1: Prepare reference and query datasets to a proper format   ==
+##=========================================================================
 
 # Import ratio peptide data from CPTAC
 CPTAC <- read.delim("ratio_peptide_MD.tsv", sep = "\t",check.names = FALSE)
@@ -179,8 +200,9 @@ CPTAC=t(CPTAC)
 # Make row names of annotation file same as the colnames from CPTAC dataset
 row.names(design) <- colnames(CPTAC)
 
-#PCATOOLS
-
+##================================================================
+##       SECTION 2: Perform Principal Component Analysis        ==
+##================================================================
 
 # Implement Principal component Analysis
 p <- pca(CPTAC,metadata = design)
@@ -342,6 +364,9 @@ pbiplot <- biplot(p,
                   caption = '27 PCs ≈ 80%',
                   returnPlot = FALSE)
 
+##================================================================
+##          SECTION 3: Perform Hierarchical Clustering          ==
+##================================================================
 
 # Check the optimal number of cluster for CPTAC
 fviz_nbclust(CPTAC,kmeans, method="silhouette")
@@ -412,6 +437,9 @@ pheatmap(CPTAC, annotation_col = design2,clustering_distance_cols = "euclidean",
 # Make CPTAC dataset as dataframe
 CPTAC=as.data.frame(CPTAC)
 
+##==================================================================================
+##  SECTION 4: Fit an Analysis of Variance Model to SND1, MTDH and MKI67 markers  ==
+##==================================================================================
 
 # Extract samples based on the three clusters
 cluster_1_samples <- rownames(design2)[design2$cluster == 1]
