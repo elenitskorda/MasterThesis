@@ -661,7 +661,12 @@ tab3%>%
 
 # Plot everything together
 ggarrange(one.way.plot.snd1,one.way.plot.MTDH, one.way.plot.MKI67,tab,tab2,tab3,
-          ncol = 3, nrow = 3,
+          ncol = 3, nrow = 2,
+          heights = c(1, 0.5, 0.3))
+
+# Plot only with raw data
+ggarrange(one.way.plot.snd1,one.way.plot.MTDH, one.way.plot.MKI67,
+          ncol = 3, nrow = 1,
           heights = c(1, 0.5, 0.3))
 
 ##===============================================================
