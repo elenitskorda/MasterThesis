@@ -521,7 +521,7 @@ one.way.plot.snd1 <- one.way.plot.snd1 +
   labs(title = "SND1 marker in response to different groups",
        x = "Groups of patients (1=Solid Normal Tissue, 
        2=Tumor Tissue,3=Tumor Tissue)",
-       y = "SND2 gene of phosphopeptide expression")
+       y = "SND1 gene of phosphopeptide expression")
 one.way.plot.snd1
 
 
