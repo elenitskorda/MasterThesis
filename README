@@ -1,3 +1,8 @@
+---
+title: Finding subtypes of ovarian cancer in omics data for precision medicine
+
+---
+
 # Finding subtypes of ovarian cancer in omics data for precision medicine
 *README for Master Thesis in Bioinformatics (60 cp).*
 
@@ -29,13 +34,14 @@ Some of the libraries that have been used in this thesis have been imported from
 
 
 ### Installation from GitHub
-The Seurat package used for the integration has to be installed over github as follows.
+The Seurat package used for the integration and OmicLoupe has to be installed over github as follows.
   ```{R}
   remotes::install_github("satijalab/seurat", "seurat5", quiet = TRUE)
   library(Seurat)
   setRepositories(ind = 1:3, addURLs = c('https://satijalab.r-universe.dev', 'https://bnprks.r-universe.dev/'))
   install.packages("presto")
   
+  devtools::install_github("ComputationalProteomics/OmicLoupe")
   ```
 
 ### Installed from Bioconductor
@@ -44,6 +50,9 @@ The Seurat package used for the integration has to be installed over github as f
 *  *ComplexHeatmap* (2.16.0)
 *  *limma* (3.57.4)
 *  *PCAtools* (2.12.0)
+*  *NormalyzerDE* (1.18.0)
+
+ GitHub
 
   Installations were made in R with for example:
   ```
@@ -55,6 +64,7 @@ The Seurat package used for the integration has to be installed over github as f
   ```
 
 ### R Based
+* *devtools* (2.4.5)
 * *SeuratObject* (5.0.1)
 * *ggtext* (0.1.2)
 * *tidyverse* (2.0.0) 
@@ -85,6 +95,7 @@ In addition to the raw mass spectrometry-based data files, computational process
 
 ### CPTAC Data
 
+* *"ratio_peptide_MD.tsv"*: contains phosphoproteome on peptide level of CPTAC data. (Normalized)
 * *"abundance_gene_MD_18.tsv"*: contains proteome of CPTAC data. (Normalized)
 * *"abundance_protein_MD.tsv"*: contains phosphoproteome on protein level of CPTAC data. (Normalized)
 * *"abundance_single-site_MD.tsv"*: contains phosphoproteome on single site level of CPTAC data. (Normalized)
@@ -92,9 +103,6 @@ In addition to the raw mass spectrometry-based data files, computational process
 #### For Fragpipe:
 
 Based on the experiment type and analytical fraction, the TMT/iTRAQ quantification tutorial has been used for multiple plexes with a pooled reference sample. The workflows used are TMT 10-bridge and TMT 10-phospho-bridge for proteome and phosphoproteome respectively.
-
-*Should I add these files?* You can upload them and then mention them here by name. Or link where you have them from?
-
 
 #### For Integration:
 
@@ -105,4 +113,12 @@ Based on the experiment type and analytical fraction, the TMT/iTRAQ quantificati
 
 ## Analysis
 
-ADD WHICH STEPS WERE DONE IN YOUR ANALYSIS, MENTION FOR EVERY STEP WHICH SCRIPT HAS BEEN USED BY NAME. 
+1. NormalyzerDE: *Stats.R*
+2. OmicLoupe: *Stats.R*
+3. Pre-processing Analysis: *unsupervised_clustering.R*
+4. Unsupervised clustering: *unsupervised_clustering.R*
+5. Integration Analysis: *proteome_integration.R*, *phosphoproteome_integration_protein.R*, *phosphoproteome_integration_singlesite.R*, *validation_of_integration.R*
+7. Pathway analysis: *proteome_integration.R*
+8. Differential Gene Expression Analysis: *proteome_integration.R*
+
+Note that filepaths have to be adjusted in the scripts if the analysis is to be replicated. Further all input files have to be in the same filepath as the script to be executed.
