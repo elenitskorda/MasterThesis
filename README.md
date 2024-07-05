@@ -2,8 +2,6 @@
 title: Finding subtypes of ovarian cancer in omics data for precision medicine
 
 ---
-
-# Finding subtypes of ovarian cancer in omics data for precision medicine
 *README for Master Thesis in Bioinformatics (60 cp).*
 
 **Student:** Eleni Theofania Skorda, <el5660sk-s@student.lu.se>
