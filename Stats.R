@@ -15,7 +15,7 @@
 ##      1. Prepare datasets to a proper format                                                       ::
 ##      2. Run NormalyzerDE without Log Transformation because the dataset is already transformed.   ::
 ##      3. Perform differential expression analysis                                                  ::
-##      4. Run OmnicLoupe through ShinyApp                                                           ::
+##      4. Run OmicLoupe through ShinyApp                                                            ::
 ##:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # Load necessary libraries
@@ -114,5 +114,5 @@ ggplot(data=de, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed,
   geom_vline(xintercept=c(-0.6, 0.6), col="red") +
   geom_hline(yintercept=-log10(0.05), col="red")
 
-# Run OmnicLoupe
+# Run OmicLoupe
 OmicLoupe::runApp()
